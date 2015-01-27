@@ -1,6 +1,6 @@
 ;; -*- coding: utf-8 -*-
 (setq emacs-load-start-time (current-time))
-(add-to-list 'load-path (expand-file-name "~/.emacs.d"))
+(add-to-list 'load-path (expand-file-name "~/.emacs.d/lisp"))
 
 ;;----------------------------------------------------------------------------
 ;; Which functionality to enable (use t or nil for true and false)
@@ -38,6 +38,16 @@
 (require 'init-modeline)
 
 ;;----------------------------------------------------------------------------
+;; Less GC, more memor
+;;----------------------------------------------------------------------------
+;; By default Emacs will initiate GC every 0.76 MB allocated
+;; (gc-cons-threshold == 800000).
+;; we increase this to 1GB (gc-cons-threshold == 100000000)
+;; @see http://www.gnu.org/software/emacs/manual/html_node/elisp/Garbage-Collection.html
+(setq-default gc-cons-threshold 100000000
+              gc-cons-percentage 0.5)
+
+;;----------------------------------------------------------------------------
 ;; Load configs for specific features and modes
 ;;----------------------------------------------------------------------------
 (require 'cl-lib)
@@ -46,16 +56,17 @@
 (require 'init-site-lisp) ;; Must come before elpa, as it may provide package.el
 
 ;; win32 auto configuration, assuming that cygwin is installed at "c:/cygwin"
-(condition-case nil
-    (when *win32*
-      (setq cygwin-mount-cygwin-bin-directory "c:/cygwin/bin")
-      (require 'setup-cygwin)
-      ;; better to set HOME env in GUI
-      ;; (setenv "HOME" "c:/cygwin/home/someuser")
-      )
-  (error
-   (message "setup-cygwin failed, continue anyway")
-   ))
+;; (condition-case nil
+;;     (when *win32*
+;;       ;; (setq cygwin-mount-cygwin-bin-directory "c:/cygwin/bin")
+;;       (setq cygwin-mount-cygwin-bin-directory "c:/cygwin64/bin")
+;;       (require 'setup-cygwin)
+;;       ;; better to set HOME env in GUI
+;;       ;; (setenv "HOME" "c:/cygwin/home/someuser")
+;;       )
+;;   (error
+;;    (message "setup-cygwin failed, continue anyway")
+;;    ))
 
 (require 'idle-require)
 
@@ -94,12 +105,12 @@
   (require 'init-org)
   (require 'init-org-mime))
 (require 'init-css)
-(require 'init-haml)
 (require 'init-python-mode)
 (require 'init-haskell)
 (require 'init-ruby-mode)
+(require 'init-lisp)
 (require 'init-elisp)
-(require 'init-yasnippet)
+(if *emacs24* (require 'init-yasnippet))
 ;; Use bookmark instead
 (require 'init-zencoding-mode)
 (require 'init-cc-mode)
@@ -127,19 +138,26 @@
 (require 'init-slime)
 (when *emacs24* (require 'init-company))
 (require 'init-stripe-buffer)
+(require 'init-eim) ;;  cannot be idle-required
+(require 'init-hs-minor-mode)
+;; need statistics of keyfreq asap
+(require 'init-keyfreq)
+(if *emacs24* (require 'init-projectile))
+
+;; misc has some crucial tools I need immediately
+(require 'init-misc)
 
 ;; color theme
 (require 'color-theme)
 (require 'color-theme-molokai)
 (color-theme-molokai)
-;; misc has some crucial tools I need immediately
-(require 'init-misc)
+;; This line must be after color-theme-molokai! Don't know why.
+(setq color-theme-illegal-faces "^\\(w3-\\|dropdown-\\|info-\\|linum\\|yas-\\|font-lock\\)")
+;; (color-theme-select 'color-theme-xp)
+;; (color-theme-xp)
 
 (setq idle-require-idle-delay 3)
-(setq idle-require-symbols '(init-lisp
-                             init-eim
-                             init-keyfreq
-                             init-move-window-buffer
+(setq idle-require-symbols '(init-writting
                              init-elnode
                              init-doxygen
                              init-pomodoro
@@ -152,21 +170,13 @@
 ;;----------------------------------------------------------------------------
 ;; Variables configured via the interactive 'customize' interface
 ;;----------------------------------------------------------------------------
-(if (file-exists-p "~/.custom.el")
-                   (load-file "~/.custom.el"))
+(if (file-exists-p "~/.custom.el") (load-file "~/.custom.el"))
 
 (when (require 'time-date nil t)
    (message "Emacs startup time: %d seconds."
     (time-to-seconds (time-since emacs-load-start-time)))
    )
 
-(custom-set-variables
- ;; custom-set-variables was added by Custom.
- ;; If you edit it by hand, you could mess it up, so be careful.
- ;; Your init file should contain only one such instance.
- ;; If there is more than one, they won't work right.
- '(bmkp-last-as-first-bookmark-file "~/.emacs.bmk")
- '(safe-local-variable-values (quote ((emacs-lisp-docstring-fill-column . 75) (ruby-compilation-executable . "ruby") (ruby-compilation-executable . "ruby1.8") (ruby-compilation-executable . "ruby1.9") (ruby-compilation-executable . "rbx") (ruby-compilation-executable . "jruby")))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
